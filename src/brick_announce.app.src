@@ -1,0 +1,16 @@
+{application, brick_announce,
+ [{description, "An announce server for brick-chain"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, {brick_announce_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+    cowboy
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {licenses, ["The Unlicense"]},
+  {links, []}
+ ]}.
