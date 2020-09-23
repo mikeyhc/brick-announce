@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 
 %% public API
--export([start_link/0]).
+-export([start_link/1]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2]).
 
@@ -16,24 +16,25 @@
 
 %% public API
 
-start_link() ->
-    gen_server:start_link(?MODULE, [], []).
+start_link(Interface) ->
+    gen_server:start_link(?MODULE, [Interface], []).
 
 %% gen_server callbacks
 
-init([]) ->
+init([Interface]) ->
     % declare used atoms
     regsiter,
     deregister,
-    gen_server:cast(self(), bind),
+    gen_server:cast(self(), {bind, Interface}),
     {ok, #state{}}.
 
 handle_call(_Msg, _From, State) ->
     {noreply, State}.
 
-handle_cast(bind, State) ->
+handle_cast({bind, Interface}, State) ->
+    Addr = find_addr(Interface),
     {ok, Socket} = chumak:socket(rep, "announce-rep"),
-    case chumak:bind(Socket, tcp, ?BIND_ADDR, ?REP_PORT) of
+    case chumak:bind(Socket, tcp, inet:ntoa(Addr), ?REP_PORT) of
         {ok, _BindPid} ->
             logger:info("starting reply socket on pid ~p", [Socket]),
             SelfPid = self(),
@@ -58,3 +59,9 @@ recv_loop(Socket, Pid) ->
     {ok, Reply} = chumak:recv(Socket),
     gen_server:cast(Pid, {recv, Reply}),
     recv_loop(Socket, Pid).
+
+find_addr(Interface) ->
+    {ok, IfAddrs} = inet:getifaddrs(),
+    {_, Opts} = lists:keyfind(Interface, 1, IfAddrs),
+    {_, Addr} = lists:keyfind(addr, 1, Opts),
+    Addr.
