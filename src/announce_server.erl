@@ -49,6 +49,7 @@ handle_cast({recv, Msg}, State=#state{socket=Socket, peers=Peers}) ->
         {register, Peer} ->
             OtherPeers = lists:filter(fun(X) -> X =/= Peer end, Peers),
             Reply = {peerlist, lists:sublist(OtherPeers, ?PEER_COUNT)},
+            logger:info("added peer ~s", [Peer]),
             chumak:send(Socket, erlang:term_to_binary(Reply)),
             {noreply, State#state{peers=[Peer|OtherPeers]}}
     end.
